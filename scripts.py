@@ -45,6 +45,9 @@ print(response)
 
 
 ################## TRAINING ##################
+from transformers import __version__
+print(f"Using Transformers version: {__version__}")  # Check version make sure it says 4.36.0
+
 import sagemaker
 import boto3
 from sagemaker.huggingface import HuggingFace
@@ -73,7 +76,7 @@ hyperparameters = {
 }
 
 # Git configuration for Hugging Face training script
-git_config = {'repo': 'https://github.com/huggingface/transformers.git', 'branch': 'v4.37.0'}
+git_config = {'repo': 'https://github.com/huggingface/transformers.git', 'branch': 'v4.38.0'}
 
 # Hugging Face estimator for training
 huggingface_estimator = HuggingFace(
@@ -90,4 +93,4 @@ huggingface_estimator = HuggingFace(
 )
 
 # Start fine-tuning job
-huggingface_estimator.fit({'train': 's3://braxton-llm-bucket/Norwich-PDS-InProgress (5)_20241129_192231_detailed 2.txt'})  # Upload file to S3 first!
+huggingface_estimator.fit({'train': 's3://braxton-llm-bucket/Norwich-PDS-InProgress.txt'})  # Upload file to S3 first!
