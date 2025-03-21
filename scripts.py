@@ -76,7 +76,7 @@ hyperparameters = {
 }
 
 # Git configuration for Hugging Face training script
-git_config = {'repo': 'https://github.com/huggingface/transformers.git', 'branch': 'v4.38.0'}
+git_config = {'repo': 'https://github.com/huggingface/transformers.git', 'branch': 'v4.36.0'}
 
 # Hugging Face estimator for training
 huggingface_estimator = HuggingFace(
