@@ -45,9 +45,6 @@ print(response)
 
 
 ################## TRAINING ##################
-from transformers import __version__
-print(f"Using Transformers version: {__version__}")  # Check version make sure it says 4.36.0
-
 import sagemaker
 import boto3
 from sagemaker.huggingface import HuggingFace
@@ -59,38 +56,39 @@ except ValueError:
 	role = iam.get_role(RoleName='sagemaker_execution_role')['Role']['Arn']
 
 # Define hyperparameters
-hyperparameters = {
-	'model_name_or_path':'meta-llama/Llama-3.1-8B-Instruct',
-	'output_dir':'/opt/ml/model',
-	'do_train': True,
-	'do_eval': True,
-	'num_train_epochs': 5,  # Increase since dataset is small
-	'per_device_train_batch_size': 1,  # Prevent OOM errors
-	'per_device_eval_batch_size': 1,
-	'warmup_steps': 50,
-	'save_strategy': 'epoch',
-	'evaluation_strategy': 'epoch',
-	'logging_dir': '/opt/ml/output/logs',
-	'fp16': True,
-	'overwrite_output_dir': True
+hyperparameters={
+    'do_train': True,
+    'do_eval': False,
+    'learning_rate': 2e-5,
+    'model_name_or_path': 'meta-llama/Llama-3.1-8B-Instruct',
+    'train_file': '/opt/ml/input/data/train/train.txt',
+    'evaluation_strategy': 'epoch',
+    'save_strategy': 'epoch',
+    'fp16': True,
+    'num_train_epochs': 2,
+    'per_device_train_batch_size': 1,
+    'per_device_eval_batch_size': 1,
+    'overwrite_output_dir': True,
+    'output_dir': '/opt/ml/model',
+    'logging_dir': '/opt/ml/output/logs',
+    'tokenizer_name': 'meta-llama/Llama-3.1-8B-Instruct',
+    'block_size': 512,
 }
 
 # Git configuration for Hugging Face training script
 git_config = {'repo': 'https://github.com/huggingface/transformers.git', 'branch': 'v4.36.0'}
 
-# Hugging Face estimator for training
 huggingface_estimator = HuggingFace(
-	entry_point='run_clm.py',  # Use run_clm.py for chat model fine-tuning
-	source_dir='examples/pytorch/language-modeling',  # Corrected path
-	instance_type='ml.g5.2xlarge',  # Cheaper than P3 instances
-	instance_count=1,
-	role=role,
-	git_config=git_config,
-	transformers_version='4.36.0',
-	pytorch_version='2.1.0',
-	py_version='py310',
-	hyperparameters=hyperparameters
+    entry_point='run_clm.py',
+    source_dir='./examples/pytorch/language-modeling',
+    instance_type='ml.g5.2xlarge',
+    instance_count=1,
+    role=role,
+    git_config=git_config,
+    transformers_version='4.36.0',
+    pytorch_version='2.1.0',
+    py_version='py310',
+    hyperparameters=hyperparameters
 )
 
-# Start fine-tuning job
-huggingface_estimator.fit({'train': 's3://braxton-llm-bucket/Norwich-PDS-InProgress.txt'})  # Upload file to S3 first!
+huggingface_estimator.fit({'train': 's3://braxton-llm-bucket/opt/ml/input/data/train/'})
