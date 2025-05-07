@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LLM Test Frontend</title>
+</head>
+<body>
+  <h2>Talk to the Model</h2>
+  <textarea id="userInput" rows="4" cols="50" placeholder="Type your message here..."></textarea><br>
+  <button onclick="sendToModel()">Send</button>
+
+  <h3>Model Response:</h3>
+  <pre id="responseBox">Waiting for input...</pre>
+
+  <script>
+    async function sendToModel() {
+      const input = document.getElementById("userInput").value;
+
+      const responseBox = document.getElementById("responseBox");
+      responseBox.textContent = "Sending request...";
+
+      try {
+        const res = await fetch("https://srepvv5sqb.execute-api.us-east-1.amazonaws.com/chat", {  <!--Change this based on API URL-->
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({ input: input })
+        });
+
+        const data = await res.json();
+        responseBox.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        console.error(err);
+        responseBox.textContent = "Error: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
