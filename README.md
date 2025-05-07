@@ -4,55 +4,52 @@ There are multiple ways to deploy Llama 3.1-8B-Instruct. Today we are going thro
 1. Deploying Llama 3.1-8B-Instruct in SageMaker through Hugging Face Hub
 2. Deploying Llama 3.1-8B-Instruct in SageMaker using a model artifact
 
-📘 README: Deploying and Testing a LLaMA Model with AWS Lambda + API Gateway + Frontend
-🔧 Overview
-This project demonstrates how to deploy a Meta LLaMA 3.1 8B Instruct model using Amazon SageMaker JumpStart, expose it through a Lambda function and API Gateway, and connect it to a simple HTML frontend.
+# 🦙 Deploy and Test LLaMA 3.1 8B Instruct on AWS
 
-📌 Stack Components
-SageMaker — Model deployment (LLaMA 3.1 8B Instruct)
+This guide walks you through deploying **Meta’s LLaMA 3.1 8B Instruct** model using Amazon SageMaker, exposing it via **AWS Lambda + API Gateway**, and testing it using a simple **HTML frontend**.
 
-AWS Lambda — Serverless backend to invoke model
+---
 
-API Gateway (HTTP API) — Public-facing API endpoint
+## 📦 What You’ll Build
 
-HTML + JS Frontend — Lightweight test interface
+- ✅ Deployed LLaMA model via **SageMaker JumpStart**
+- ✅ A serverless **Lambda function** to invoke the model
+- ✅ A public **HTTP API** with **CORS** enabled
+- ✅ A frontend webpage to test the model
 
-🚀 Step-by-Step Setup
-✅ 1. Deploy the Model via SageMaker JumpStart
-Go to the AWS Console → SageMaker → JumpStart
+---
 
-Search for "LLaMA 3.1 8B Instruct"
+## 🚀 Deployment Overview
 
-Click Deploy
+### ✅ 1. Deploy LLaMA 3.1 via SageMaker JumpStart
 
-Wait for the endpoint to be active
+1. Open **SageMaker Console → JumpStart**
+2. Search for **“LLaMA 3.1 8B Instruct”**
+3. Click **Deploy**
+4. Wait until the endpoint is live
+5. Copy the endpoint name (e.g., `jumpstart-dft-meta-textgeneration-llama-3b-*`)
 
-Copy the endpoint name (e.g., jumpstart-dft-meta-textgeneration-llama-3b...)
+---
 
-✅ 2. Create the Lambda Function
-Go to AWS Lambda Console
+### ✅ 2. Create the Lambda Function
 
-Click Create Function
+1. Go to **AWS Lambda Console**
+2. Create a function:
+   - Name: `SageMakerInvokeFunction`
+   - Runtime: `Python 3.11`
+   - Permissions: Create new role with basic Lambda permissions
 
-Name: SageMakerInvokeFunction
+3. Paste this code and **replace** the `ENDPOINT_NAME`:
 
-Runtime: Python 3.11
-
-Permissions: “Create new role with basic Lambda permissions”
-
-Replace the default code with:
-
-python
-Copy
-import boto3
-import json
+```python
+import boto3, json
 
 sagemaker = boto3.client('sagemaker-runtime')
-ENDPOINT_NAME = 'your-sagemaker-endpoint-name'  # 🔁 Replace this
+ENDPOINT_NAME = 'your-sagemaker-endpoint-name'
 
 def lambda_handler(event, context):
     method = event.get("requestContext", {}).get("http", {}).get("method", "")
-
+    
     if method == "OPTIONS":
         return {
             "statusCode": 200,
@@ -97,58 +94,49 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({"error": str(e)})
         }
-Click Deploy
+```
 
-Go to Configuration → Permissions, and click the execution role
+4. Click **Deploy**
+5. Go to **Configuration > Permissions**
+6. Click the role name and attach:  
+   `AmazonSageMakerFullAccess`
 
-Attach the policy:
+---
 
-nginx
-Copy
-AmazonSageMakerFullAccess
-✅ 3. Create HTTP API in API Gateway
-Go to API Gateway > HTTP APIs
+### ✅ 3. Set Up HTTP API Gateway
 
-Click Create API
+1. Go to **API Gateway > HTTP APIs**
+2. Create a new API with:
+   - Integration: Lambda → `SageMakerInvokeFunction`
+   - Route:
+     - Method: `ANY`
+     - Path: `/chat`
 
-Integration: Lambda → SageMakerInvokeFunction
+3. Under **CORS**: (NOTE: SKIP THIS STEP IF YOU'RE USING MY LAMBDA FUNCTION FILE)
+   - Origins: `*`
+   - Methods: `POST, OPTIONS`
+   - Headers: `content-type`
 
-Route:
+4. Go to **Deployments > Deploy to $default stage**
+5. Copy your endpoint URL (e.g.):
+   ```
+   https://your-api-id.execute-api.us-east-1.amazonaws.com/chat
+   ```
 
-Method: ANY
+---
 
-Path: /chat
+### ✅ 4. Create the Frontend Test Page
 
-Go to CORS settings (left sidebar)
+Make a file called `test.html`:
 
-Allowed Origins: *
-
-Allowed Methods: OPTIONS,POST
-
-Allowed Headers: content-type
-
-Go to Deployments → Deploy to $default stage
-
-Copy your API URL:
-
-bash
-Copy
-https://your-api-id.execute-api.us-east-1.amazonaws.com/chat
-✅ 4. Create the Frontend Test Site
-Create a file called test.html:
-
-html
-Copy
+```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>LLM Test Frontend</title>
-</head>
+<head><title>LLM Test</title></head>
 <body>
-  <h2>Talk to the Model</h2>
-  <textarea id="userInput" rows="4" cols="50" placeholder="Type your message here..."></textarea><br>
+  <h2>Talk to LLaMA</h2>
+  <textarea id="userInput" rows="4" cols="50" placeholder="Ask me something..."></textarea><br>
   <button onclick="sendToModel()">Send</button>
-
   <h3>Model Response:</h3>
   <pre id="responseBox">Waiting for input...</pre>
 
@@ -156,43 +144,59 @@ Copy
     async function sendToModel() {
       const input = document.getElementById("userInput").value;
       const responseBox = document.getElementById("responseBox");
-      responseBox.textContent = "Sending request...";
+      responseBox.textContent = "Sending...";
 
       try {
         const res = await fetch("https://your-api-id.execute-api.us-east-1.amazonaws.com/chat", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ input: input })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input })
         });
-
         const data = await res.json();
         responseBox.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
-        console.error(err);
         responseBox.textContent = "Error: " + err.message;
       }
     }
   </script>
 </body>
 </html>
-🔁 Replace the fetch() URL with your actual API Gateway endpoint.
+```
 
-✅ Result
-You can now:
+> 🔁 Replace the fetch URL with your actual API endpoint
 
-Type a message in the browser
+---
 
-Send it to the deployed LLaMA model
+## ✅ Test It
 
-See the model’s response in real time
+- Open `test.html` in your browser
+- Type a message like `What’s the capital of France?`
+- Click **Send**
+- You’ll see the model’s JSON response in the browser
 
-✅ Optional Improvements
-✅ Add a chat-style UI
+## Test in Console
+- curl -X OPTIONS https://srepvv5sqb.execute-api.us-east-1.amazonaws.com/chat \  (Change this based on api id)
+  -H "Origin: null" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: content-type" -i
 
-🔐 Secure your API with API keys or Cognito
+- Output should look like:
+  
+- HTTP/2 200 
+- date: Wed, 07 May 2025 15:24:39 GMT
+- content-length: 0
+- access-control-allow-origin: *
+- access-control-allow-methods: POST,OPTIONS
+- access-control-allow-headers: content-type
+- apigw-requestid: KNAwohhpIAMEVwA=
 
-🚀 Host your frontend using S3 static hosting or GitHub Pages
+---
 
-🔁 Log input/output in DynamoDB for auditing
+## 💡 Optional Improvements
+
+- Add chat history + timestamps
+- Host the frontend via GitHub Pages or S3
+- Secure API with API key or Cognito
+- Log requests/responses in DynamoDB
+
+---
