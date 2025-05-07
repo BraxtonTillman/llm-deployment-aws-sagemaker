@@ -175,10 +175,12 @@ Make a file called `test.html`:
 - You’ll see the model’s JSON response in the browser
 
 ## Test in Console
-- curl -X OPTIONS https://srepvv5sqb.execute-api.us-east-1.amazonaws.com/chat \  (Change this based on api id)
+```bash
+curl -X OPTIONS https://your-api-id.execute-api.us-east-1.amazonaws.com/chat \
   -H "Origin: null" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: content-type" -i
+```
 
 - Output should look like:
   
