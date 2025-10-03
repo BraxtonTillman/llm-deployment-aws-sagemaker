@@ -13,7 +13,7 @@ except ValueError:
 hub = {
 	'HF_MODEL_ID':'meta-llama/Llama-3.1-8B-Instruct',
 	'SM_NUM_GPUS': json.dumps(1),
-	'HF_TOKEN': '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'
+	'HF_TOKEN': 'HF_TOKEN_KEY'
 }
 
 assert hub['HF_TOKEN'] != '<REPLACE WITH YOUR TOKEN>', "You have to provide a token."
